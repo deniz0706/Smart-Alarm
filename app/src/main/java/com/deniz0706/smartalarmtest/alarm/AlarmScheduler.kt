@@ -11,6 +11,10 @@ import kotlinx.serialization.json.Json
 import java.time.*
 
 object AlarmScheduler {
+    const val ACTION_ALARM = "com.deniz0706.smartalarmtest.action.ALARM"
+    const val ACTION_SNOOZE = "com.deniz0706.smartalarmtest.action.SNOOZE"
+    internal fun alarmRequestCode(id: Long) = id.hashCode()
+    internal fun snoozeRequestCode(id: Long) = id.hashCode() xor 0x5A00_0000
     fun nextOccurrence(alarm: Alarm, now: ZonedDateTime = ZonedDateTime.now()): ZonedDateTime {
         val today = now.withHour(alarm.hour).withMinute(alarm.minute).withSecond(0).withNano(0)
         if (alarm.repeatDays.isEmpty()) return if (today.isAfter(now)) today else today.plusDays(1)
@@ -27,11 +31,29 @@ object AlarmScheduler {
             manager.setAlarmClock(AlarmManager.AlarmClockInfo(trigger, pending), pending)
         else manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, trigger, pending)
     }
-    fun cancel(context: Context, id: Long) = context.getSystemService(AlarmManager::class.java).cancel(
-        PendingIntent.getBroadcast(context, id.hashCode(), Intent(context, AlarmReceiver::class.java), PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE)
-    )
+    fun scheduleSnooze(context: Context, alarm: Alarm) {
+        val trigger = System.currentTimeMillis() + alarm.snoozeMinutes * 60_000L
+        context.getSystemService(AlarmManager::class.java).setAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP, trigger, pendingIntent(context, alarm, true)
+        )
+    }
+    fun cancel(context: Context, id: Long) {
+        val manager = context.getSystemService(AlarmManager::class.java)
+        regularPendingIntent(context, id, PendingIntent.FLAG_NO_CREATE)?.let(manager::cancel)
+        snoozePendingIntent(context, id, PendingIntent.FLAG_NO_CREATE)?.let(manager::cancel)
+    }
     private fun pendingIntent(context: Context, alarm: Alarm) = PendingIntent.getBroadcast(
-        context, alarm.id.hashCode(), Intent(context, AlarmReceiver::class.java).putExtra("alarm", Json.encodeToString(alarm)),
+        context, alarmRequestCode(alarm.id), Intent(context, AlarmReceiver::class.java).setAction(ACTION_ALARM).putExtra("alarm", Json.encodeToString(alarm)),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+    private fun pendingIntent(context: Context, alarm: Alarm, snooze: Boolean) = PendingIntent.getBroadcast(
+        context, snoozeRequestCode(alarm.id), Intent(context, AlarmReceiver::class.java).setAction(ACTION_SNOOZE).putExtra("alarm", Json.encodeToString(alarm)),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+    private fun regularPendingIntent(context: Context, id: Long, flags: Int) = PendingIntent.getBroadcast(
+        context, alarmRequestCode(id), Intent(context, AlarmReceiver::class.java).setAction(ACTION_ALARM), flags or PendingIntent.FLAG_IMMUTABLE
+    )
+    private fun snoozePendingIntent(context: Context, id: Long, flags: Int) = PendingIntent.getBroadcast(
+        context, snoozeRequestCode(id), Intent(context, AlarmReceiver::class.java).setAction(ACTION_SNOOZE), flags or PendingIntent.FLAG_IMMUTABLE
     )
 }

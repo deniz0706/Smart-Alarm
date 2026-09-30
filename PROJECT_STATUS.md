@@ -5,17 +5,18 @@
 - Türkçe, Material 3 ve koyu tema öncelikli Compose arayüzü; boş durum, yaklaşan alarm özeti, alarm kartları ve ayarlar.
 - Alarm oluşturma/düzenleme/silme, saat seçimi, haftanın günleri, titreşim, erteleme süresi ve etkinlik durumu.
 - DataStore üzerinde JSON tabanlı kalıcı alarm verisi ve anında gözlemlenebilir UI güncellemeleri.
-- AlarmManager ile kesin alarm planlama, tekrar günü hesabı, düzenlemede yeniden planlama ve kapatmada iptal.
+- AlarmManager ile kesin alarm planlama, tekrar günü hesabı, çakışmayan ayrı erteleme intent'i, düzenlemede yeniden planlama ve kapatmada iptal.
 - Açılış/paket güncellemesi sonrasında etkin alarmları yeniden planlayan alıcı.
-- Tam ekran alarm deneyimi, alarm sesi, titreşim ve erteleme.
-- Normal, üç soruluk matematik ve dizi hatırlama görevleri. QR modu için bağımlılıksız, açıkça belirtilmiş bir doğrulama prototipi.
+- Bildirim/full-screen intent tarafından açılan alarm deneyimi ile Activity'den bağımsız foreground service üzerinde alarm sesi, titreşim ve erteleme. Sistem tam ekran açılışı reddederse alarm bildirimi üzerinden kullanılabilir kalır.
+- Normal, toplama/çıkarma/çarpma içeren üç soruluk matematik ve dizi hatırlama görevleri. QR modu yalnızca “yakında” önizlemesi olarak gösterilir ve seçilemez.
+- Tek seferlik alarm tetiklendikten sonra kalıcı veride otomatik olarak devre dışı bırakılır; tekrar eden alarm açık kalır ve bir sonraki güne planlanır.
 - Android 13+ bildirim izni talebi ve kesin alarm sistem ayarına geçiş.
 
 ## Mimari
 
 - `model`: değişmez alarm modeli ve görev türleri.
 - `data`: Preferences DataStore deposu.
-- `alarm`: planlayıcı, bildirim, broadcast receiver'lar ve çalma Activity'si.
+- `alarm`: planlayıcı, bildirim, broadcast receiver'lar, çalma foreground service'i ve görev Activity'si.
 - `ui`: ekranlar, gözlemlenebilir ViewModel ve Material tema.
 
 Bu prototip bilinçli olarak küçük, anlaşılır bir katman yapısı kullanır. ViewModel veri değişikliklerini depoya yazar ve planlayıcıyı aynı işlem akışında günceller.
@@ -29,9 +30,8 @@ Bu prototip bilinçli olarak küçük, anlaşılır bir katman yapısı kullanı
 
 ## Bilinen sınırlamalar
 
-- QR ekranı kamera taraması yapmaz; güvenilir ve hafif bir prototip doğrulama akışı sunar. Üretimde CameraX ve ML Kit ile kayıtlı QR eşleştirmesi eklenmelidir.
+- QR tarama uygulanmamıştır ve kullanıcıya çalışan bir doğrulamaymış gibi sunulmaz: seçenek açıkça “Yakında” olarak işaretlidir ve yeni alarmlarda seçilemez. Üretimde CameraX ve ML Kit ile kayıtlı QR eşleştirmesi eklenmelidir.
 - Sistem üreticileri arka plan başlatma ve pil optimizasyonu kurallarını farklı uygulayabilir.
-- Tek seferlik alarm çaldıktan sonra veri modelinde etkin görünmeye devam eder; yeniden planlanmaz, kullanıcı isterse tekrar kaydedebilir.
 - Tema sistemin açık/koyu tercihine uyar; uygulama içi tema seçimi henüz kalıcı ayar olarak sunulmaz.
 
 ## Fiziksel cihaz testi gerekenler

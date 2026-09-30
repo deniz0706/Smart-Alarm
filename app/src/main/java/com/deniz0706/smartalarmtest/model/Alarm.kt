@@ -4,11 +4,11 @@ import kotlinx.serialization.Serializable
 import java.time.DayOfWeek
 
 @Serializable
-enum class ChallengeType(val title: String, val description: String) {
+enum class ChallengeType(val title: String, val description: String, val available: Boolean = true) {
     NORMAL("Normal", "Tek dokunuşla alarmı kapat"),
     MATH("Matematik", "Üç işlemi doğru çözerek uyan"),
     MEMORY("Hafıza", "Gösterilen diziyi hatırla"),
-    QR("QR Kod", "Önceden seçilen kodu tarayarak kapat")
+    QR("QR Kod · Yakında", "Kamera ile QR doğrulaması bu sürümde kullanılamıyor", false)
 }
 
 @Serializable
